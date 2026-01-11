@@ -40,10 +40,9 @@ func TestNew(t *testing.T) {
 		tmpFile := createTempFile(t, "test")
 		defer os.Remove(tmpFile)
 
-		called := false
 		w, err := New(tmpFile,
 			WithInterval(1*time.Second),
-			WithOnChange(func([]byte) { called = true }),
+			WithOnChange(func([]byte) {}),
 		)
 		if err != nil {
 			t.Fatalf("New() with options failed: %v", err)

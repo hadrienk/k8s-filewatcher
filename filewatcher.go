@@ -101,10 +101,10 @@ func (w *Watcher) Start(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
-			w.watcher.Close()
+			_ = w.watcher.Close()
 			return nil
 		case <-ticker.C:
-			w.reload()
+			_ = w.reload()
 		}
 	}
 }
@@ -149,12 +149,12 @@ func (w *Watcher) handleEvent(event fsnotify.Event) {
 	case event.Op&fsnotify.Write != 0:
 	case event.Op&fsnotify.Create != 0:
 	case event.Op&fsnotify.Chmod != 0, event.Op&fsnotify.Remove != 0:
-		w.watcher.Add(event.Name)
+		_ = w.watcher.Add(event.Name)
 	default:
 		return
 	}
 
-	w.reload()
+	_ = w.reload()
 }
 
 func (w *Watcher) reload() error {

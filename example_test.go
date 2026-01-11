@@ -21,7 +21,7 @@ func ExampleWatcher() {
 	}
 
 	ctx := context.Background()
-	go watcher.Start(ctx)
+	go func() { _ = watcher.Start(ctx) }()
 
 	caCert := watcher.Get()
 	fmt.Printf("Current CA cert size: %d bytes\n", len(caCert))

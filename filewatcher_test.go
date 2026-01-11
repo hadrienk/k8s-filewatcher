@@ -13,7 +13,7 @@ import (
 func TestNew(t *testing.T) {
 	t.Run("creates watcher for existing file", func(t *testing.T) {
 		tmpFile := createTempFile(t, "test content")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		w, err := New(tmpFile)
 		if err != nil {
@@ -38,7 +38,7 @@ func TestNew(t *testing.T) {
 
 	t.Run("accepts options", func(t *testing.T) {
 		tmpFile := createTempFile(t, "test")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		w, err := New(tmpFile,
 			WithInterval(1*time.Second),
@@ -59,7 +59,7 @@ func TestNew(t *testing.T) {
 func TestWatcher_Get(t *testing.T) {
 	t.Run("returns current content", func(t *testing.T) {
 		tmpFile := createTempFile(t, "initial")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		w, _ := New(tmpFile)
 		if got := string(w.Get()); got != "initial" {
@@ -69,7 +69,7 @@ func TestWatcher_Get(t *testing.T) {
 
 	t.Run("is thread-safe", func(t *testing.T) {
 		tmpFile := createTempFile(t, "concurrent")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		w, _ := New(tmpFile)
 
@@ -88,7 +88,7 @@ func TestWatcher_Get(t *testing.T) {
 func TestWatcher_GetFS(t *testing.T) {
 	t.Run("returns content and file info", func(t *testing.T) {
 		tmpFile := createTempFile(t, "test")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		w, _ := New(tmpFile)
 		content, info, err := w.GetFS()
@@ -107,7 +107,7 @@ func TestWatcher_GetFS(t *testing.T) {
 func TestWatcher_Start(t *testing.T) {
 	t.Run("detects file writes", func(t *testing.T) {
 		tmpFile := createTempFile(t, "v1")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		var callCount atomic.Int32
 		w, _ := New(tmpFile,
@@ -120,10 +120,10 @@ func TestWatcher_Start(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		go w.Start(ctx)
+		go func() { _ = w.Start(ctx) }()
 		time.Sleep(200 * time.Millisecond)
 
-		os.WriteFile(tmpFile, []byte("v2"), 0644)
+		_ = os.WriteFile(tmpFile, []byte("v2"), 0644)
 		time.Sleep(300 * time.Millisecond)
 
 		if got := string(w.Get()); got != "v2" {
@@ -138,14 +138,14 @@ func TestWatcher_Start(t *testing.T) {
 		tmpDir := t.TempDir()
 
 		dir1 := filepath.Join(tmpDir, "..data_1")
-		os.Mkdir(dir1, 0755)
-		os.WriteFile(filepath.Join(dir1, "ca.crt"), []byte("cert v1"), 0644)
+		_ = os.Mkdir(dir1, 0755)
+		_ = os.WriteFile(filepath.Join(dir1, "ca.crt"), []byte("cert v1"), 0644)
 
 		dataLink := filepath.Join(tmpDir, "..data")
-		os.Symlink(dir1, dataLink)
+		_ = os.Symlink(dir1, dataLink)
 
 		certLink := filepath.Join(tmpDir, "ca.crt")
-		os.Symlink(filepath.Join("..data", "ca.crt"), certLink)
+		_ = os.Symlink(filepath.Join("..data", "ca.crt"), certLink)
 
 		var callCount atomic.Int32
 		w, _ := New(certLink,
@@ -158,15 +158,15 @@ func TestWatcher_Start(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		go w.Start(ctx)
+		go func() { _ = w.Start(ctx) }()
 		time.Sleep(200 * time.Millisecond)
 
 		dir2 := filepath.Join(tmpDir, "..data_2")
-		os.Mkdir(dir2, 0755)
-		os.WriteFile(filepath.Join(dir2, "ca.crt"), []byte("cert v2"), 0644)
+		_ = os.Mkdir(dir2, 0755)
+		_ = os.WriteFile(filepath.Join(dir2, "ca.crt"), []byte("cert v2"), 0644)
 
-		os.Remove(dataLink)
-		os.Symlink(dir2, dataLink)
+		_ = os.Remove(dataLink)
+		_ = os.Symlink(dir2, dataLink)
 
 		time.Sleep(500 * time.Millisecond)
 
@@ -180,7 +180,7 @@ func TestWatcher_Start(t *testing.T) {
 
 	t.Run("stops when context cancelled", func(t *testing.T) {
 		tmpFile := createTempFile(t, "test")
-		defer os.Remove(tmpFile)
+		t.Cleanup(func() { _ = os.Remove(tmpFile) })
 
 		w, _ := New(tmpFile)
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
@@ -202,6 +202,6 @@ func createTempFile(t *testing.T, content string) string {
 	if _, err := f.WriteString(content); err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
+	_ = f.Close()
 	return f.Name()
 }
